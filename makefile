@@ -11,7 +11,7 @@ all: sort
 sort: $(DEPENDENCIES) 
 	cc -o sort sort.o options.o dequeue.o io.o 
 
-sort.o: sort.h io.o options.h dequeue.h
+sort.o: sort.h io.h options.h dequeue.h
 
 options.o: sort.h options.h dequeue.o dequeue.h
 

@@ -37,4 +37,9 @@ OptionsPtr initFieldRec(void) ;
 
 char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts ) ;
 
+void printOptions( OptionsPtr aRec ) ;
+
+void error( char *s ) ;
+void error2( const char *s, char *t ) ;
+
 /* The field options are sent behind the scenes inside the dequeue */

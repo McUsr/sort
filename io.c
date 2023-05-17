@@ -1,15 +1,22 @@
 #include <stdio.h>
 #include <string.h>
+#include "io.h"
 
 /* This is the module for reading in a file from stdin
  * and prepare pointers for each line of input to make
- * it easy to sort by fields
+ * it easy to sort by fields, when any fields are specified
+ * in sort's arguments.
+ *
+ * the whole concept is stolen from Stephen R. Bourns book:
+ * "The Unix(tm) System V Environment" pp. 226.
+ * ISBN: 0 201 18484 2
+ *
+ *
  */
 
 char *alloc(int);
-#define MAXLEN 10000
 
-int readlines(char *lineptr[], int maxlines)
+int readlines0(char *lineptr[], int maxlines)
 {
 	int mygetline(char *, int);
 
@@ -28,7 +35,7 @@ int readlines(char *lineptr[], int maxlines)
 	return nlines;
 }
 
-void writelines(char *lineptr[], int nlines)
+void writelines0(char *lineptr[], int nlines)
 {
 	while (nlines-- > 0)
 		printf("%s\n", *lineptr++);
@@ -48,9 +55,11 @@ int mygetline(char *s, int lim)
 	return t - s;
 }
 
+
+
 /* K&R p. 101-102 */
 /* pointer arithmetic demo */
-#define ALLOCSIZE 10000 /* size of available space */
+#define ALLOCSIZE 100000 /* size of available space */
 
 static char allocbuf[ALLOCSIZE] ; /* Storage for alloc */
 static char *allocp = allocbuf ;

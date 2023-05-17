@@ -3,15 +3,6 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-
-/* TODO: 
- * create the record structure, 
- *
- * see to that we can pass a nice one for "no fields"
- *
- *
- */
-
 #include "dequeue.h"
 /* This scheme obviously only works for one dequeue in one program! */
 

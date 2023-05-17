@@ -359,7 +359,7 @@ void show_help()
 {
     printf("\n\033[1msort\033[0m: sort standard input or individual files to stdout\n"
             "\nSyntax\n"
-            "\t\033[1msort\033[0m [-h | --help ] | [ [-r -n -d -f -l ] | [ -N[r,n,d,f,l] ... ] FILE1..FILEn\n"
+            "\t\033[1msort\033[0m [-h | --help ] | [ [-r -n -d -f -l ] | [ -N[r,n,d,f,l] ... ] FILE\n"
             "Options\n"
             "\t-r : reverse\n"
             "\t-n : numeric\n"
@@ -367,7 +367,8 @@ void show_help()
             "\t-d : directory sort\n"
             "\t-l : lexiographic order (default)\n"
             "\t-N : field numbers between 1..255\n\n"
-            "It is possible to specifiy global options first and then override on a per field basis\n\n"
+            "It is possible to specifiy global options first and then override on a per field basis\n"
+            "\033[1msort\033[0m can only sort one file at a time, either from stdin or a file.\n\n"
           );
 }
 

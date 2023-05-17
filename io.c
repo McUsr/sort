@@ -4,17 +4,14 @@
 /* This is the module for reading in a file from stdin
  * and prepare pointers for each line of input to make
  * it easy to sort by fields
- * 
- * This won't happen before the options are validated,
- * and the command parsed.
  */
 
+char *alloc(int);
 #define MAXLEN 10000
 
 int readlines(char *lineptr[], int maxlines)
 {
 	int mygetline(char *, int);
-	char *alloc(int);
 
 	int len, nlines;
 	char *p, line[MAXLEN];
@@ -51,3 +48,26 @@ int mygetline(char *s, int lim)
 	return t - s;
 }
 
+/* K&R p. 101-102 */
+/* pointer arithmetic demo */
+#define ALLOCSIZE 10000 /* size of available space */
+
+static char allocbuf[ALLOCSIZE] ; /* Storage for alloc */
+static char *allocp = allocbuf ;
+
+char *alloc(int n) /* return pointer to n characters */
+{
+    if (allocbuf + ALLOCSIZE - allocp >= n ) { /* it fits */
+        allocp +=n ;
+        return allocp -n ; /* old p */
+    } else /* not enough room */
+        return 0;
+}
+
+void afree( char *p ) /* free storage pointed to by p */
+{
+    if (p >= allocbuf && p < allocbuf + ALLOCSIZE)
+       allocp = p ;
+} 
+
+            

@@ -32,31 +32,39 @@ int parse_fields=0;
 #endif
 
 #define HANOI
+#undef HANOI
 #ifdef HANOI
 
-void printOptions( OptionsPtr aRec ) ;
 
 
-void error2( const char *s, char *t ) ;
-/* TODO: thinking the second pointer could be void *, and it would work
- * with any argument anyhow
- */
 int main(int argc, char **argv)
 {
     int max_field=0;
     OptionsPtr global_opts=initFieldRec();
 
-    printf("Argc up front == %d\n",argc);
     char **ap = parse_opts(&argc, argv,&max_field, global_opts) ;
-	printf("Argc after  == %d, Argv == %s\n",argc, *ap);
+    printf("Max fields set: %d\n",max_field );
     printf("Global options set!");
     printOptions( global_opts) ;
+
+    if (max_field > 0 ) {
+        while (!isEmpty(*headPtr)) {
+            printf("\nthe queue isn't empty!\n");
+            QueueNodePtr nextNode = dequeue(headPtr) ;
+            OptionsPtr  nextField = (OptionsPtr) nextNode->data ;
+            int curfno = nextField->fieldno ;
+            printf(" options for field nr %d\n",curfno) ;
+            printOptions(nextField) ;
+            free(nextNode) ;
+        }
+        printf("the queue is empty!\n");
+    }
+
 	return 0;
 }
 #endif
 
 void show_help();
-void error( char *s ) ;
 void set_opts( char *optstr, OptionsPtr opt_rec );
 
 
@@ -92,14 +100,16 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
        while (--*argc > 0 ) {
             ++argv;
            if (strcmp(*argv,"--")== 0 ) {
+#ifdef BERLIN
                printf("end of options!\n");
+#endif
                --*argc;
                argv++;
                break ;
            } else if ((*argv)[0] == '-' ) {
                ++(*argv) ;
                /* looking for field numbers with options: */
-               if (sscanf(*argv,"%3d%3[rfdn]", &fieldnr,optstr) > 0) {
+               if (sscanf(*argv,"%3d%3[rfdnl]", &fieldnr,optstr) > 0) {
                    if (fieldnr == 0 ) 
                         /* we need field nr 0 to specify the whole line, aka no fields */
                         error("specified field outside of range: 1 ..255");
@@ -115,15 +125,21 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
                        cur_fld_opts = initFieldRec(); /* die if it doesn't work out. */
                        cur_fld_opts->fieldno = fieldnr; 
                        *max_field = max(*max_field,fieldnr);
+#ifdef BERLIN
                        printf("We got a field value: %d\n",fieldnr );
+#endif
                        /* we need to specify max field val */
                        if(spec_fields == FALSE )
                            spec_fields = TRUE ;
-                        /* printf("found a possibly valid fieldnr, value == %d\n",fieldnr) ; */
+#ifdef BERLIN
+                        printf("found a possibly valid fieldnr, value == %d\n",fieldnr) ;
+#endif
 
                     }
                     if (strlen(optstr) > 0 ) {
-                       printf("options == %s\n", optstr) ;
+#ifdef BERLIN
+                       printf("options FOR A FIELD! == %s\n", optstr) ;
+#endif
                        /* needs to check if there are any other stuff left */
                        set_opts( optstr, cur_fld_opts );
                     } else {
@@ -135,12 +151,12 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
 
                     enqueue(&tailPtr,(void *)cur_fld_opts) ;
 
-               } else if (sscanf(*argv,"%3[rfdn]", optstr) > 0) {
+               } else if (sscanf(*argv,"%3[rfdnl]", optstr) > 0) {
                    /* or maybe we just got global options */
                     if ( spec_fields == TRUE )
-                            error("once a field is specified subsequent arguments needs one.");
+                            error("once a field is specified subsequent arguments needs a specified field too.");
                     else {
-                        printf("we'll add to the global record optstr == %s\n",optstr);
+                        /* printf("we'll add to the global record optstr == %s\n",optstr); */
                         spec_global = TRUE ;
                         set_opts( optstr, global_opts );
                     }
@@ -148,7 +164,9 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
                } else {
                    error2(" Invalid options: didn't contain a valid argument optsr = %s\n",*argv);
                }
+#ifdef BERLIN
                 printf("End condition: argc == %d, argv = %s\n",*argc,*argv);
+#endif
                /* end condition */
                 if (*argc==1 )
                     argv++;
@@ -165,9 +183,13 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
    } else {
        --*argc;
        argv++ ;
+#ifdef BERLIN
        printf("here...argc == 1 \n"); 
+#endif
    }
+#ifdef BERLIN
    printf("argc == %d\n",*argc );
+#endif
 
     return argv;
 }
@@ -278,7 +300,6 @@ OptionsPtr initFieldRec(void)
     return fieldRec;
 }
 
-#ifdef HANOI
 void printOptions( OptionsPtr aRec )
 {
     printf("Field/Options record: \n" ) ;
@@ -310,16 +331,19 @@ void printOptions( OptionsPtr aRec )
 
     printf("current field number: %d\n", aRec->fieldno);
 }
-#endif
+
 /* error: print an error message and die! */
 void error( char *s ) 
 {
-    fprintf(stderr,"\n\033[1msort\033[0m: error: %s\n",s);
+    fprintf(stderr,"\n\033[1msort\033[0m: error: %s\n\n",s);
     exit(2) ;
 }    
 
 /* error: print an error message  with some value and die! */
 void error2( const char *s, char *t ) 
+/* TODO: thinking the second pointer could be void *, and it would work
+ * with any argument anyhow
+ */
 {
     char *u = NULL ;
     if ((u = (char *)malloc(256 )) == NULL )
@@ -333,9 +357,17 @@ void error2( const char *s, char *t )
 /* show_help: print help and die */
 void show_help()
 {
-    printf("\033[1msort\033[0m: sort standard input or files to stdout\n"
-            "\n\nSyntax\n\n"
-            "\033[1msort\033[0m [-r -n -d -f ] | [ -N[r,n,d,f] ... ] ...\n"
+    printf("\n\033[1msort\033[0m: sort standard input or individual files to stdout\n"
+            "\nSyntax\n"
+            "\t\033[1msort\033[0m [-h | --help ] | [ [-r -n -d -f -l ] | [ -N[r,n,d,f,l] ... ] FILE1..FILEn\n"
+            "Options\n"
+            "\t-r : reverse\n"
+            "\t-n : numeric\n"
+            "\t-f : fold case\n"
+            "\t-d : directory sort\n"
+            "\t-l : lexiographic order (default)\n"
+            "\t-N : field numbers between 1..255\n\n"
+            "It is possible to specifiy global options first and then override on a per field basis\n\n"
           );
 }
 

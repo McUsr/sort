@@ -33,25 +33,32 @@ int parse_fields=0;
 
 #define HANOI
 #ifdef HANOI
-char **parse_opts(int *argc,char **argv, int* max_field ) ;
 
+void printOptions( OptionsPtr aRec ) ;
+
+
+void error2( const char *s, char *t ) ;
+/* TODO: thinking the second pointer could be void *, and it would work
+ * with any argument anyhow
+ */
 int main(int argc, char **argv)
 {
     int max_field=0;
+    OptionsPtr global_opts=initFieldRec();
+
     printf("Argc up front == %d\n",argc);
-    char **ap = parse_opts(&argc, argv,&max_field) ;
+    char **ap = parse_opts(&argc, argv,&max_field, global_opts) ;
 	printf("Argc after  == %d, Argv == %s\n",argc, *ap);
+    printf("Global options set!");
+    printOptions( global_opts) ;
 	return 0;
 }
 #endif
 
 void show_help();
 void error( char *s ) ;
+void set_opts( char *optstr, OptionsPtr opt_rec );
 
-OptionsPtr initFieldRec(void) ;
-/* not the first parsing of arguments, first we check for help
- * then we show help and we die without further ado in main.
- */
 
 /* parse_opts: parses all command line options concerning sorting from the
  * command line, factored out from main to make for an easy main to read. 
@@ -66,21 +73,23 @@ OptionsPtr initFieldRec(void) ;
  * argc for further processing of file name arguments in main(). 
  */
 
-char **parse_opts(int *argc,char **argv, int* max_field )
+char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts )
+/* global opts: parsed initially, until they aren't we need to know if they have
+ * been, so that if field numbers are set, and the global options deviate from 
+ * the defaults, those globall options are copied into the field options.
+ */
 {
     int fieldnr;
     char optstr[10]={0};
-    int spec_fields=FALSE, global_opts_pending=FALSE ;
-    OptionsPtr curRec=NULL, globalRec=NULL;
-
-    printf("spec_fields == %d\n",spec_fields );
+    int spec_fields=FALSE, spec_global=FALSE ;
+    OptionsPtr cur_fld_opts=NULL;
 
    if ( *argc > 1 && ((strcmp(argv[1],"-h") == 0 ) || (strcmp(argv[1],"--help") == 0 ))) {
            show_help();
            exit(0);
    } else if (*argc > 1 ) {
        /* might be some options to process here */
-       while (--*argc > 0 ) { /* *argv[0] */
+       while (--*argc > 0 ) {
             ++argv;
            if (strcmp(*argv,"--")== 0 ) {
                printf("end of options!\n");
@@ -89,7 +98,7 @@ char **parse_opts(int *argc,char **argv, int* max_field )
                break ;
            } else if ((*argv)[0] == '-' ) {
                ++(*argv) ;
-               /* printf(" cur arg == %s\n",*argv); */
+               /* looking for field numbers with options: */
                if (sscanf(*argv,"%3d%3[rfdn]", &fieldnr,optstr) > 0) {
                    if (fieldnr == 0 ) 
                         /* we need field nr 0 to specify the whole line, aka no fields */
@@ -99,12 +108,13 @@ char **parse_opts(int *argc,char **argv, int* max_field )
                         error("specified field outside of range: 1 ..255");
                    else {
 
-                       if (global_opts_pending==TRUE) {
+                       if (spec_global==TRUE) {
                            /* enque the stuff */
-                           global_opts_pending=FALSE;
+                           spec_global=FALSE;
                        }
-                       curRec = initFieldRec();
-
+                       cur_fld_opts = initFieldRec(); /* die if it doesn't work out. */
+                       cur_fld_opts->fieldno = fieldnr; 
+                       *max_field = max(*max_field,fieldnr);
                        printf("We got a field value: %d\n",fieldnr );
                        /* we need to specify max field val */
                        if(spec_fields == FALSE )
@@ -115,22 +125,28 @@ char **parse_opts(int *argc,char **argv, int* max_field )
                     if (strlen(optstr) > 0 ) {
                        printf("options == %s\n", optstr) ;
                        /* needs to check if there are any other stuff left */
+                       set_opts( optstr, cur_fld_opts );
+                    } else {
+                        cur_fld_opts->method  = global_opts->method;
+                        cur_fld_opts->folding = global_opts->folding;
+                        cur_fld_opts->reverse = global_opts->reverse; 
                     }
                     /* this is the place we enque the current field record */
+
+                    enqueue(&tailPtr,(void *)cur_fld_opts) ;
+
                } else if (sscanf(*argv,"%3[rfdn]", optstr) > 0) {
+                   /* or maybe we just got global options */
                     if ( spec_fields == TRUE )
                             error("once a field is specified subsequent arguments needs one.");
                     else {
-                        global_opts_pending = TRUE ;
-                        if (curRec == NULL ) {
-                            printf("curRec == NULL\n") ;
-                            curRec = initFieldRec();
-                        }
-                        printf("we'll add to the first record\n");
+                        printf("we'll add to the global record optstr == %s\n",optstr);
+                        spec_global = TRUE ;
+                        set_opts( optstr, global_opts );
                     }
                
                } else {
-                   printf(" %s didn't contain a valid argument optsr = %s\n",*argv,optstr);
+                   error2(" Invalid options: didn't contain a valid argument optsr = %s\n",*argv);
                }
                 printf("End condition: argc == %d, argv = %s\n",*argc,*argv);
                /* end condition */
@@ -143,7 +159,7 @@ char **parse_opts(int *argc,char **argv, int* max_field )
            optstr[0]='\0';
            fieldnr = 0;
        }
-       if (global_opts_pending==TRUE) {
+       if (spec_global==TRUE) {
            /* enque the stuff */
        }
    } else {
@@ -154,6 +170,52 @@ char **parse_opts(int *argc,char **argv, int* max_field )
    printf("argc == %d\n",*argc );
 
     return argv;
+}
+
+/* set_opt: setting of sorting options */
+void set_opts( char *optstr, OptionsPtr opt_rec )
+/* We process one option by one, and check for any conflicts
+ * against the previously set options in the options record
+ * opt_rec.
+ */
+{
+    while (*optstr != '\0') {
+        /* printf("cur opt == %c\n",*optstr) ; */
+        switch (*optstr) {
+            case 'r' :
+                opt_rec->reverse=1;
+                break;
+            case 'f' :
+                if((opt_rec->method & NUM_METH) == NUM_METH )
+                    error("We can't fold a numeric sort.");
+                else
+                    opt_rec->folding=1;
+                break;
+            case 'd' :
+                if((opt_rec->method & NUM_METH) == NUM_METH )
+                    error("We can't sort a numeric sort in dictionary order.");
+                else
+                    opt_rec->method=DICT_METH;
+                break;
+            case 'l' :
+                if((opt_rec->method & NUM_METH) == NUM_METH )
+                    error("We can't sort a numeric sort in lexiographic order.");
+                else
+                    opt_rec->method=LEX_METH;
+                break;
+            case 'n' :
+                if (opt_rec->folding) 
+                    error("We can't fold a numeric sort.");
+                else if ((opt_rec->method & DICT_METH) == DICT_METH )
+                    error("We can't sort a numeric sort in dictionary order.");
+                else
+                    opt_rec->method=NUM_METH;
+                break;
+            default:
+                    error("Can't happen illegal argument in set_opt!");
+        }
+        ++optstr;
+    }
 }
 
 #ifdef LAOS
@@ -178,7 +240,7 @@ char **parse_opts(int *argc,char **argv, int* max_field )
      * no number yet, 
      */
 
-    OptionsPtr curRec = initFieldRec();
+    OptionsPtr cur_fld_opts = initFieldRec();
 
     int proc_opts = FALSE;
     int in_proc   = FALSE ;
@@ -198,7 +260,7 @@ char **parse_opts(int *argc,char **argv, int* max_field )
 	}
 
     if (!proc_opts)
-        enqueue(&tailPtr,(void *)curRec) ;
+        enqueue(&tailPtr,(void *)cur_fld_opts) ;
 
 
     return argv;
@@ -216,6 +278,7 @@ OptionsPtr initFieldRec(void)
     return fieldRec;
 }
 
+#ifdef HANOI
 void printOptions( OptionsPtr aRec )
 {
     printf("Field/Options record: \n" ) ;
@@ -247,12 +310,25 @@ void printOptions( OptionsPtr aRec )
 
     printf("current field number: %d\n", aRec->fieldno);
 }
-
+#endif
+/* error: print an error message and die! */
 void error( char *s ) 
 {
     fprintf(stderr,"\n\033[1msort\033[0m: error: %s\n",s);
     exit(2) ;
 }    
+
+/* error: print an error message  with some value and die! */
+void error2( const char *s, char *t ) 
+{
+    char *u = NULL ;
+    if ((u = (char *)malloc(256 )) == NULL )
+        error("error2 couldn't malloc memory for err message!");
+    else 
+        sprintf(u,s,t);
+    fprintf(stderr,"\n\033[1msort\033[0m: error: %s\n",u);
+    exit(2) ;
+}
 
 /* show_help: print help and die */
 void show_help()

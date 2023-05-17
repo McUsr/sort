@@ -30,6 +30,11 @@ typedef Options *OptionsPtr;
 
 
 
-void printOptions( OptionsPtr aRec ) ;
-char **parse_opts(int *argc,char **argv, int* max_field );
-/* The options are sent behind the scenes inside the dequeue */
+OptionsPtr initFieldRec(void) ;
+/* not the first parsing of arguments, first we check for help
+ * then we show help and we die without further ado in main.
+ */
+
+char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts ) ;
+
+/* The field options are sent behind the scenes inside the dequeue */

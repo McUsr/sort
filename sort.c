@@ -60,39 +60,6 @@ int main(int argc, char **argv)
                 /* TODO: pick correct cmp0 routine here */
 
                 int (*cmpfunc0)(void*, void*) = get_cmp0( global_opts) ;
-               /* 
-                int (*cmpfunc0)(void*, void*) = NULL ;
-                switch (global_opts->method ) {
-                    case LEX_METH: 
-                        if( global_opts->reverse && global_opts->folding )
-                            cmpfunc0 =  (int (*)(void*, void*))r_cmpfold0 ;
-                        else if (global_opts->reverse )
-                            cmpfunc0 =  (int (*)(void*, void*))r_strcmp0; 
-                        else if (global_opts->folding )
-                            cmpfunc0 =  (int (*)(void*, void*)) cmpfold0;
-                        else
-                            cmpfunc0 = (int (*)(void*, void*))strcmp ;
-                        break;
-                    case NUM_METH:
-                        if( global_opts->reverse )
-                            cmpfunc0 = (int (*)(void*, void*))r_numcmp0 ;
-                        else
-                            cmpfunc0 = (int (*)(void*, void*))numcmp0; 
-                        break;
-                    case DICT_METH:
-                        if( global_opts->reverse && global_opts->folding )
-                            cmpfunc0 = (int (*)(void*, void*)) r_cmpdir_fold0;
-                        else if (global_opts->reverse )
-                            cmpfunc0 = (int (*)(void*, void*))r_cmpdir0; 
-                        else if (global_opts->folding )
-                            cmpfunc0 = (int (*)(void*, void*)) cmpdir_fold0 ;
-                        else 
-                            cmpfunc0 = (int (*)(void*, void*))cmpdir0; 
-                        break;
-                    default:
-                        error("Bad constant for sort method!");
-                }
-                */
                         
                 qsort0((void **) lineptr, 0, nlines-1,
                     (int (*)(void*, void*))cmpfunc0);
@@ -104,7 +71,8 @@ int main(int argc, char **argv)
                 return 1;
             }
         } else {
-            
+            /* read in N lines by realinesN */
+
             /* reads in the file in a field wise fashion and sorts */
             while (!isEmpty(*headPtr)) {
 

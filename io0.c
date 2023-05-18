@@ -1,14 +1,14 @@
-
-
-/* This is the module for reading in a file from stdin
- * and prepare pointers for each line of input to make
- * it easy to sort by fields, when any fields are specified
- * in sort's arguments.
+/* This is the module for reading in a file from stdin when no fields are
+ * specified, aka awk's $0 concept for the whole record, which in this case is
+ * a line.  The whole thing is per today pretty much exactly as the examples
+ * are in K&R, with the exercises 5.14, 5.15 and 5.16 done.
  *
- * the whole concept is stolen from Stephen R. Bourns book:
- * "The Unix(tm) System V Environment" pp. 226.
- * ISBN: 0 201 18484 2
- *
+ * I admit to having seen some solutions on the internet, that did a whole
+ * bunch of stuff in the comparision method, and/or inside quicksort. I have
+ * chosen the approach of creating a selector function, that returns dedicated
+ * comparision functions, that does as little as possible inside them.  Though
+ * I found the price of uppercasing the whole stream/file, or preparing the
+ * whole stream/file for directory sort to be too much.
  *
  */
 #include <stdio.h>

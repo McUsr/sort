@@ -6,6 +6,7 @@
 
 int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield) ;
 void writelinesN(char *lineptr[], char * *fparr[], int nlines, int lastfield ) ;
+char * retf(  int fieldno, int lastfield, char* *fparr[], int row, int maxline );
 
 int numcmpN(const char *s1, const char *s2);
 int r_numcmpN(const char *s1, const char *s2);

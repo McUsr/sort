@@ -53,14 +53,25 @@ int main(int argc, char **argv)
 
     FILE *in=stdin ;
     int nlines ;
-    creat_fparr(fp, MAXLINES, 5);
+    creat_fparr(fp, MAXLINES, 6);
 
     /* next test is to check out some fields instead of writelines */
     if ((nlines = readlinesN(lineptr,fp, MAXLINES,5)) >= 0) {
         /* readlines0: here? */
         /* TODO: pick correct cmp0 routine here */
-        writelinesN(lineptr,fp, nlines,5);
+#if 1 == 0
+        for(int k=0;k<4;k++)
+            printf("%d:%s%s",k,fp[0][k],(k<4)? " " : "\n"); 
+            printf("how about this: %s",fp[0][4]); 
         return 0;
+        --nlines ;
+        for(int k=0;k<nlines;k++)
+            printf("%s\n",retf( 1 , 5, fp, k, nlines) );
+
+#endif
+        writelinesN(lineptr,fp, nlines,5);
+
+
     } else {
         printf("input too big to sort nlines == %d\n",nlines);
         return 1;
@@ -80,10 +91,39 @@ void creat_fparr(char * *fparr[], int rows, int lastfield)
           exit(1) ;
        } 
     }
-    
 }
 
-/* we need test every value in the field pointer array for values */
+/* ref: returns a field, from a line
+ * It is more of a proof of concept, than anything else, as I think we-re going 
+ * to do it directly in the comparisionn functions, maybe by an array for further
+ * indirection.
+ */
+
+char * retf(  int fieldno, int lastfield, char* *fparr[], int row, int maxline )
+{
+    if(fieldno <1  ||  fieldno > lastfield ){
+        fprintf(stderr,"retf: fieldno out of range: 1..%d was: %d\n",
+                lastfield,fieldno); 
+        exit(2);
+    } else if(row <0  ||  row >maxline ){
+        fprintf(stderr,"retf: row out of range: 1..%d was: %d\n",
+                maxline,row); 
+        exit(2);
+    } else {
+        return fparr[row][--fieldno];
+    }
+}
+
+#if 1 == 0
+/* output field n from the current line */
+void putf( int n, int lastfield) 
+{
+    register char *cp = fp[n] ;             /* we get a pointer into the field pointer array for this field. */
+    register char c;                        /* the pointer returned points into the line buf. */
+    if(n<0 || n >=lastfield) return ;
+    while(c = *cp++) putchar(c) ;
+} 
+#endif
 
 int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
 {
@@ -98,45 +138,40 @@ int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
     register int c;
     register int fc;
 	nlines = 0;
-
 	while ((len = mygetline(line, MAXLEN)) > 0)
 		if (nlines >= maxlines || (L = alloc(len)) == NULL)
 			return -1; /* out of mem on both accounts! */
 		else {
+            L = strdup(line);
 
-			strcpy(L, line);
 			lineptr[nlines] = L; /* REMOVED postincrement here! */
-
             /* fill fparr with pointers to first char of field */
         
             cp = L ;                /* address of L[0] */
             ap = fparr[nlines] ;    /* address of fld_ptr[0] on current line ! */
             *ap++= cp ;             /* fparr[nlines][0] == &L[0] */
+
             fc=1;                   /* just registered the first field */
 
             while(1) {
                 c = *cp; 
                 if(c=='\n' || c==EOF ) {            /* end of current line! */
-                    if(cp==L && c==EOF ) break;     /* empty last line. cp == L == &L[0] */
-                    *cp = 0;                      /* We put a NULL into the current pos of L */                  
+                    if(cp==L && c==EOF )
+                        break;     /* empty last line. cp == L == &L[0] */
+                    else if (c==EOF)
+                        --fc ;
+                    *cp++ = '\0';                      /* We put a NULL into the current pos of L */                  
                     ++nlines ;
                     break ;            /* end of file, but we did put out the last field first! */
                 }
                 else if(c == IFS) {
                     *cp++ = 0 ;                     /* we put NULL into the Linebuf */
-#if 1 == 0
-                    printf("fc = %d, cp = %p%s",fc, cp, ( fc < (lastfield-1)) ? " " : "\n\n" );
-#endif 
                     *ap++ = cp;                     /* we put the pointer to the linbuf into the field pointer array and points
                                                      * to the new slot. */
-                    if(++fc >= lastfield) break ;
+                    if(++fc > (lastfield-1)) break ;
                 } else ++cp ;
             }
-#if 1 == 0
-            ap = fparr[nlines] ;    /* address of fld_ptr[0] on current line ! */
-            for(int j=0;j<lastfield;j++)
-               printf("j = %d, *ap = %p%s",j, *ap++, ( j < (lastfield-1)) ? " " : "\n\n" );
-#endif 
+            *ap=0;
             if (c == EOF ) break ;
             ++nlines;
 		}
@@ -151,15 +186,11 @@ void writelinesN(char *lineptr[], char * *fparr[], int nlines, int lastfield )
 	while (--nlines > 0) {
         /* rebuild the line with OFS where we put 0's */
         register int j;
-        for(j=1;j<(lastfield-1);j++)
-            *(fparr[i][j]-1) = OFS ;
-
-#if 0 == 1
-        printf("*fparr[i][0] == %p lineptr == %p\n", fparr[i][0], *lineptr );
-#endif 
+        for(j=1;j<=(lastfield-1);j++)
+            if((fparr[i][j]) != NULL)
+                *(fparr[i][j]-1) = OFS ;
         ++i;
-		printf("%s\n", *lineptr++);
-
+		printf("%s", *lineptr++);
     } 
 }
 
@@ -175,6 +206,7 @@ static int mygetline(char *s, int lim)
 		*t++ = c;
 
 	*t = '\0';
+    /* the new line gets stored for sure */
 	return t - s;
 }
 

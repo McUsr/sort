@@ -5,7 +5,7 @@
 DEPENDENCIES = dequeue.o options.o io0.o sort.o
 
 ioN.o: ioN.h ioN.c
-	cc -o ioN ioN.o options.o
+	cc -o ioN ioN.c options.o dequeue.o
 
 all: sort
 

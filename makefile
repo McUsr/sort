@@ -2,10 +2,7 @@
 
 # CFLAGS = -g
 
-DEPENDENCIES = dequeue.o options.o io0.o sort.o
-
-ioN.o: ioN.h ioN.c
-	cc -o ioN ioN.c io0.o options.o dequeue.o
+DEPENDENCIES = dequeue.o options.o ioN.o io0.o sort.o
 
 all: sort
 

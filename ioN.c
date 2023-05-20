@@ -71,13 +71,13 @@ int main(int argc, char **argv)
     if(strcmp(fp[2][1],fp[3][1]) > 0) 
         printf("needs to swap! %s and %s\n",fp[2][1],fp[3][1]) ;
 
-    return 0; 
-#endif
-    qsortN2((void **) lineptr, fp , 0, nlines-1,
-			1, (int (*)(void *, void *))strcmp);
         /* printf("numlines = %d\n",nlines); */
         /* return 0; */
 
+    return 0 ;
+#endif
+    qsortN2((void **) lineptr, fp , 0, nlines-1,
+			1, (int (*)(void *, void *))strcmp);
         writelinesN(lineptr,fp, nlines,5);
 
 
@@ -158,7 +158,7 @@ int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
             /* fill fparr with pointers to first char of field */
         
             cp = L ;                /* address of L[0] */
-            ap = fparr[nlines] ;    /* address of fld_ptr[0] on current line ! */
+            ap = fparr[nlines++] ;    /* address of fld_ptr[0] on current line ! */
             *ap++= cp ;             /* fparr[nlines][0] == &L[0] */
 
             fc=1;                   /* just registered the first field */
@@ -166,12 +166,11 @@ int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
             while(1) {
                 c = *cp; 
                 if(c=='\n' || c==EOF ) {            /* end of current line! */
-                    if(cp==L && c==EOF )
+                    if(cp==L && c==EOF ) 
                         break;     /* empty last line. cp == L == &L[0] */
-                    else if (c==EOF)
+                     else if (c==EOF) 
                         --fc ;
                     *cp++ = '\0';                      /* We put a NULL into the current pos of L */                  
-                    ++nlines ;
                     break ;            /* end of file, but we did put out the last field first! */
                 }
                 else if(c == IFS) {
@@ -183,9 +182,8 @@ int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
             }
             *ap=0;
             if (c == EOF ) break ;
-            ++nlines;
 		}
-	return nlines;
+	return --nlines;
 }
 
 void writelinesN(char *lineptr[], char * *fparr[], int nlines, int lastfield )
@@ -199,6 +197,17 @@ void writelinesN(char *lineptr[], char * *fparr[], int nlines, int lastfield )
         for(j=1;j<=(lastfield-1);j++)
             if((fparr[i][j]) != NULL)
                 *(fparr[i][j]-1) = OFS ;
+            else {
+                /* inserting a newline after last field
+                 * when a line has too few fields
+                 */
+                char *tp = fparr[i][(j-1)];
+                while (*tp != '\0')
+                    tp++;
+                *tp++ = '\n' ;
+                *tp = '\0' ;
+                break;
+            }
         ++i;
 		printf("%s", *lineptr++);
     } 

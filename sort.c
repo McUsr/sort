@@ -4,6 +4,7 @@
 #include "sort.h"
 #include "options.h"
 #include "io0.h"
+#include "ioN.h"
 #include "dequeue.h"
 /* sort.c 
  * K&R exercises 5.14 - 5.17
@@ -11,8 +12,8 @@
  * I have done all at once: not starting
  * before I had a plan for exercise 5.17
  */
-#define MAXLINES 5000
 char *lineptr[MAXLINES];
+char* *fp[MAXLINES];
 
 
 int main(int argc, char **argv)
@@ -24,23 +25,6 @@ int main(int argc, char **argv)
     OptionsPtr global_opts=initFieldRec();
 
     char **ap = parse_opts(&argc, argv,&max_field, global_opts) ;
-    printf("Max fields set: %d\n",max_field );
-    printf("Global options set!");
-    printOptions( global_opts) ;
-
-    if (max_field > 0 ) {
-        while (!isEmpty(*headPtr)) {
-            printf("\nthe queue isn't empty!\n");
-            QueueNodePtr nextNode = dequeue(headPtr) ;
-            OptionsPtr  nextField = (OptionsPtr) nextNode->data ;
-            int curfno = nextField->fieldno ;
-            printf(" options for field nr %d\n",curfno) ;
-            printOptions(nextField) ;
-            free(nextNode) ;
-        }
-        printf("the queue is empty!\n");
-    }
-
     /* setting up the processing of the input...for sorting! */
         
 
@@ -48,7 +32,7 @@ int main(int argc, char **argv)
             /* current convention is, is that ap holds the current arg
              * after exiting parse_opts */
             if ( (in = fopen(*ap,"r") ) == NULL ) {
-                fprintf(stderr,"fileargs1: Can't open %s\n",*argv );
+                fprintf(stderr,"sort: fileargs1: Can't open %s\n",*argv );
                 exit(1) ;
             }
         }
@@ -56,28 +40,48 @@ int main(int argc, char **argv)
         if (max_field == 0 ) {
             /* reads in the file in a simple fashion and sorts */
             if ((nlines = readlines0(lineptr, MAXLINES)) >= 0) {
-                /* readlines0: here? */
-                /* TODO: pick correct cmp0 routine here */
 
-                int (*cmpfunc0)(void*, void*) = get_cmp0( global_opts) ;
+                int (*cmpfunc)(void*, void*) = get_cmp( global_opts) ;
                         
                 qsort0((void **) lineptr, 0, nlines-1,
-                    (int (*)(void*, void*))cmpfunc0);
+                    (int (*)(void*, void*))cmpfunc);
 
                 writelines0(lineptr, nlines);
                 return 0;
             } else {
-                printf("input too big to sort nlines == %d\n",nlines);
+                fprintf(stderr,"sort: error: input too big to sort nlines == %d\n",
+                        nlines);
                 return 1;
             }
         } else {
-            /* read in N lines by realinesN */
+                creat_fparr(fp, MAXLINES, (max_field+1));
+                /* makes an array of pointers to char (field pointers)
+                 * in the corresponding linebuffer lineptr[nlines] */
+                if ((nlines = readlinesN(lineptr,fp, MAXLINES, max_field)) >= 0) {
+                /* reads in the file in a field wise fashion and sorts */
 
-            /* reads in the file in a field wise fashion and sorts */
-            while (!isEmpty(*headPtr)) {
+                    while (!isEmpty(*headPtr)) {
+                        QueueNodePtr nextNode = dequeue(headPtr) ;
+                        OptionsPtr  nextField = (OptionsPtr) nextNode->data ;
+                        int curfno = nextField->fieldno - 1;
+#if 1 == 0
+                        printOptions(nextField) ;
+#endif 
+                        int (*cmpfunc)(void*, void*) = get_cmp( nextField) ;
+                        free(nextField) ;
+                        free(nextNode) ;
 
-            }
-            /* post processes the sorted file and prints the file to stdout.*/
+                        qsortN2((void **) lineptr, fp , 0, nlines-1,
+                                curfno, (int (*)(void *, void *))cmpfunc);
+                    }
+                    /* post processes the sorted file and prints the file to stdout.*/
+                    writelinesN(lineptr,fp, nlines,max_field);
+
+                } else {
+                    fprintf(stderr,"sort:  error: input too big to sort nlines == %d\n",
+                            nlines);
+                    return 1;
+                }
         }
 
 	return 0;

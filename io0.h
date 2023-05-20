@@ -1,6 +1,7 @@
 /* io.h io for full lines */
 
 #define MAXLEN 8192 
+#define MAXLINES 5000
 #define IFS '\t'
 #define OFS '\t'
 int readlines0(char *lineptr[], int maxlines);

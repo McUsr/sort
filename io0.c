@@ -2,14 +2,6 @@
  * specified, aka awk's $0 concept for the whole record, which in this case is
  * a line.  The whole thing is per today pretty much exactly as the examples
  * are in K&R, with the exercises 5.14, 5.15 and 5.16 done.
- *
- * I admit to having seen some solutions on the internet, that did a whole
- * bunch of stuff in the comparision method, and/or inside quicksort. I have
- * chosen the approach of creating a selector function, that returns dedicated
- * comparision functions, that does as little as possible inside them.  Though
- * I found the price of uppercasing the whole stream/file, or preparing the
- * whole stream/file for directory sort to be too much.
- *
  */
 #include <stdio.h>
 #include <string.h>
@@ -294,9 +286,6 @@ int r_cmpdir_fold(const char *s1, const char *s2)
 
     return (strcmp(u1,u2)*-1);
 }
-
-
-
 
 /* K&R p. 101-102 */
 /* pointer arithmetic demo */

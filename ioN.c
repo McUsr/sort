@@ -1,14 +1,15 @@
 /* This is the module for reading in a file from stdin
  * and prepare pointers for each line of input to make
  * it easy to sort by fields, when any fields are specified
- * in sort's arguments.
+ * in sort's arguments. This module is building upon io0,
+ * and has a dependency to it.
  *
  * the whole concept is stolen from Stephen R. Bourns book:
  * "The Unix(tm) System V Environment" pp. 226.
  * ISBN: 0 201 18484 2
  *
- *
  */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -16,82 +17,13 @@
 #include "options.h"
 #include "io0.h"
 #include "ioN.h"
-/*
- * STRATEGIES:
- * 
- * Reunderstand the code, and build a way it can work properly.
- *
- * I'm thinking of having a preallocated array outside of the read line function, much like the
- * the ineptr array, the thing is, that I'd rather not declare any too big size, what I could do, was to declare
- * a block, -> an array with calloc? then I could treat it as I wanted?
- *
- */
-static char t1[MAXLEN], t2[MAXLEN] ;
-/* Linebuffers for altering contents before comparision of strings*/
-
-
-char *alloc(int);
-
-#define MAXLINES 5000
-
-char* *fp[MAXLINES];
-char *lineptr[MAXLINES];
 
 static int mygetline(char *s, int lim) ;
-void creat_fparr(char * *fparr[], int rows, int lastfield) ;
 
 
-#define HANOI 1
-#ifdef HANOI
-int fv[MAXF] ;      /* ??? really? numerical equivalent of arguments. */
-/* old way, which we have chipped in our queue for */
-int main(int argc, char **argv)
-{
-    extern char* *fp[MAXLINES];
-    extern char *lineptr[MAXLINES];
-
-    extern int fv[MAXF] ;      /* ??? really? numerical equivalent of arguments. */
-
-    FILE *in=stdin ;
-    int nlines ;
-    creat_fparr(fp, MAXLINES, 6);
-
-    /* next test is to check out some fields instead of writelines */
-    if ((nlines = readlinesN(lineptr,fp, MAXLINES,5)) >= 0) {
-        /* readlines0: here? */
-        /* TODO: pick correct cmp0 routine here */
-#if 1 == 0
-        for(int k=0;k<4;k++)
-            printf("%d:%s%s",k,fp[0][k],(k<4)? " " : "\n"); 
-            printf("how about this: %s",fp[0][4]); 
-        return 0;
-        --nlines ;
-        for(int k=0;k<nlines;k++)
-            printf("%s\n",retf( 1 , 5, fp, k, nlines) );
-
-    if(strcmp(fp[2][1],fp[3][1]) > 0) 
-        printf("needs to swap! %s and %s\n",fp[2][1],fp[3][1]) ;
-
-        /* printf("numlines = %d\n",nlines); */
-        /* return 0; */
-
-    return 0 ;
-#endif
-    /* observe: fieldnr decremented up front. */
-    qsortN2((void **) lineptr, fp , 0, nlines-1,
-			4, (int (*)(void *, void *))strcmp);
-        writelinesN(lineptr,fp, nlines,5);
-
-
-    } else {
-        printf("input too big to sort nlines == %d\n",nlines);
-        return 1;
-    }
-
-
-}
-#endif
-
+/* creat_fparr: creats individual arrays for all of the 
+ * lines in the linebuffer, but only for as many fields
+ * as necessary */
 void creat_fparr(char * *fparr[], int rows, int lastfield)
 {
     register int i;
@@ -108,6 +40,8 @@ void creat_fparr(char * *fparr[], int rows, int lastfield)
  * It is more of a proof of concept, than anything else, as I think we-re going 
  * to do it directly in the comparisionn functions, maybe by an array for further
  * indirection.
+ * Is redundant at this point in time, but can be cool for printing  columns, so
+ * saved!
  */
 
 char * retf(  int fieldno, int lastfield, char* *fparr[], int row, int maxline )
@@ -128,7 +62,6 @@ char * retf(  int fieldno, int lastfield, char* *fparr[], int row, int maxline )
 
 int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
 {
-    /* lastfield, so we don't overdo it */
 	int mygetline(char *, int);
 
 	int len, nlines;
@@ -173,11 +106,11 @@ int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
             }
             if (c == EOF ) break ;
 
-            if (fc < (lastfield-1) ) {
+            if (fc < lastfield ) {
              /* we need to reassemble the line, print it with an errormessage
              * and reset the linenumber to over-write it.
              */
-                fprintf(stderr,"sort: input error too few fields:, line nr %d rejected: ",--nlines);
+                fprintf(stderr,"sort: input error: too few fields: rejecting line nr %d:\n",--nlines);
                 ap=fparr[nlines] ;
                 while (*ap) {
                     fprintf(stderr,"%s%s",*ap, (*(ap+1)) ? "\t" : "\n");

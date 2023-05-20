@@ -68,7 +68,16 @@ int main(int argc, char **argv)
         for(int k=0;k<nlines;k++)
             printf("%s\n",retf( 1 , 5, fp, k, nlines) );
 
+    if(strcmp(fp[2][1],fp[3][1]) > 0) 
+        printf("needs to swap! %s and %s\n",fp[2][1],fp[3][1]) ;
+
+    return 0; 
 #endif
+    qsortN2((void **) lineptr, fp , 0, nlines-1,
+			1, (int (*)(void *, void *))strcmp);
+        /* printf("numlines = %d\n",nlines); */
+        /* return 0; */
+
         writelinesN(lineptr,fp, nlines,5);
 
 
@@ -113,6 +122,7 @@ char * retf(  int fieldno, int lastfield, char* *fparr[], int row, int maxline )
         return fparr[row][--fieldno];
     }
 }
+
 
 #if 1 == 0
 /* output field n from the current line */
@@ -183,7 +193,7 @@ void writelinesN(char *lineptr[], char * *fparr[], int nlines, int lastfield )
     register int i;
     i=0;
 
-	while (--nlines > 0) {
+	while (nlines-- > 0) {
         /* rebuild the line with OFS where we put 0's */
         register int j;
         for(j=1;j<=(lastfield-1);j++)
@@ -267,12 +277,50 @@ void qsortN(void *v[], int left, int right,
 	qsortN(v, last+1, right, comp);
 }
 
+void qsortN2(void *v[], char* *fp[], int left, int right,
+			int fn, int (*comp)(void *, void *))
+{
+	int i, last;
+    void swapN2(void *v[], char* *fp[], int i, int j) ;
+	if (left >= right)
+		return;
+	swapN2(v,fp, left, (left + right)/2);
+	last = left;
+	for (i = left+1; i <= right; i++)
+		if ((*comp)((void *)fp[i][fn], (void *)fp[left][fn]) < 0) 
+			swapN2(v,fp, ++last, i);
+	swapN2(v,fp, left, last);
+	qsortN2(v,fp, left, last-1,fn, comp);
+	qsortN2(v,fp, last+1, right,fn, comp);
+}
+
+#if 0 == 1
+/* f: returns a field within qsortN
+ * the fieldnumber are vetted and decremented up front
+ * the linenumber adjusted by the initial call to qsortN
+ */
+char *f(fieldno,row) {
+    ;
+}
+#endif
+
 void swapN(void *v[], int i, int j)
 {
 	void *temp;
-	temp = v[i];
-	v[i] = v[j];
-	v[j] = temp;
+	temp  = v[i];
+	v[i]  = v[j];
+	v[j]  = temp;
+}
+
+void swapN2(void *v[], char* *fp[], int i, int j)
+{
+	void *temp;
+	temp  = v[i];
+	v[i]  = v[j];
+	v[j]  = temp;
+    temp  = fp[i];
+    fp[i] = fp[j];
+    fp[j] = temp ;
 }
 
 int numcmpN(const char *s1, const char *s2)

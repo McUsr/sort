@@ -22,4 +22,7 @@ int r_cmpdir_foldN(const char *s1, const char *s2);
 void qsortN(void *v[], int left,
         int right, int (*comp)(void *, void *));
 
+void qsortN2(void *v[], char* *fp[], int left, int right,
+			int fn, int (*comp)(void *, void *));
+
 int (*get_cmpN(OptionsPtr global_opts))(void*, void*); 

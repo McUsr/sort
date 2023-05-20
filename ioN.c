@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     return 0 ;
 #endif
     qsortN2((void **) lineptr, fp , 0, nlines-1,
-			1, (int (*)(void *, void *))strcmp);
+			4, (int (*)(void *, void *))strcmp);
         writelinesN(lineptr,fp, nlines,5);
 
 
@@ -180,8 +180,20 @@ int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
                     if(++fc > (lastfield-1)) break ;
                 } else ++cp ;
             }
-            *ap=0;
             if (c == EOF ) break ;
+
+            if (fc < (lastfield-1) ) {
+             /* we need to reassemble the line, print it with an errormessage
+             * and reset the linenumber to over-write it.
+             */
+                fprintf(stderr,"sort: input error too few fields:, line nr %d rejected: ",--nlines);
+                ap=fparr[nlines] ;
+                while (*ap) {
+                    fprintf(stderr,"%s%s",*ap, (*(ap+1)) ? "\t" : "\n");
+                    ap++;
+                }
+            } 
+            *ap=0;
 		}
 	return --nlines;
 }

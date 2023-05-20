@@ -62,42 +62,42 @@ int mygetline(char *s, int lim)
 	return t - s;
 }
 
-int (*get_cmp0(OptionsPtr global_opts))(void*, void*) {
+int (*get_cmp(OptionsPtr global_opts))(void*, void*) {
 
-    int (*cmpfunc0)(void*, void*) = NULL ;
+    int (*cmpfunc)(void*, void*) = NULL ;
                 
     switch (global_opts->method ) {
         case LEX_METH: 
             if( global_opts->reverse && global_opts->folding )
-                cmpfunc0 =  (int (*)(void*, void*))r_cmpfold0 ;
+                cmpfunc =  (int (*)(void*, void*))r_cmpfold ;
             else if (global_opts->reverse )
-                cmpfunc0 =  (int (*)(void*, void*))r_strcmp0; 
+                cmpfunc =  (int (*)(void*, void*))r_strcmp; 
             else if (global_opts->folding )
-                cmpfunc0 =  (int (*)(void*, void*)) cmpfold0;
+                cmpfunc =  (int (*)(void*, void*)) cmpfold;
             else
-                cmpfunc0 = (int (*)(void*, void*))strcmp ;
+                cmpfunc = (int (*)(void*, void*))strcmp ;
             break;
         case NUM_METH:
             if( global_opts->reverse )
-                cmpfunc0 = (int (*)(void*, void*))r_numcmp0 ;
+                cmpfunc = (int (*)(void*, void*))r_numcmp ;
             else
-                cmpfunc0 = (int (*)(void*, void*))numcmp0; 
+                cmpfunc = (int (*)(void*, void*))numcmp; 
             break;
         case DICT_METH:
             if( global_opts->reverse && global_opts->folding )
-                cmpfunc0 = (int (*)(void*, void*)) r_cmpdir_fold0;
+                cmpfunc = (int (*)(void*, void*)) r_cmpdir_fold;
             else if (global_opts->reverse )
-                cmpfunc0 = (int (*)(void*, void*))r_cmpdir0; 
+                cmpfunc = (int (*)(void*, void*))r_cmpdir; 
             else if (global_opts->folding )
-                cmpfunc0 = (int (*)(void*, void*)) cmpdir_fold0 ;
+                cmpfunc = (int (*)(void*, void*)) cmpdir_fold ;
             else 
-                cmpfunc0 = (int (*)(void*, void*))cmpdir0; 
+                cmpfunc = (int (*)(void*, void*))cmpdir; 
             break;
         default:
             error("Bad constant for sort method!");
     }
 
-    return cmpfunc0 ;
+    return cmpfunc ;
 }
 
 void qsort0(void *v[], int left, int right,
@@ -127,7 +127,7 @@ void swap0(void *v[], int i, int j)
 	v[j] = temp;
 }
 
-int numcmp0(const char *s1, const char *s2)
+int numcmp(const char *s1, const char *s2)
 {
 	double v1, v2;
 
@@ -141,7 +141,7 @@ int numcmp0(const char *s1, const char *s2)
 		return 0;
 }
 
-int r_numcmp0(const char *s1, const char *s2)
+int r_numcmp(const char *s1, const char *s2)
 {
 	double v1, v2;
 
@@ -155,7 +155,7 @@ int r_numcmp0(const char *s1, const char *s2)
 		return 0;
 }
 
-int r_strcmp0(const char *s1, const char *s2 )
+int r_strcmp(const char *s1, const char *s2 )
 {
     return (strcmp(s1,s2) * -1 ) ;
 }
@@ -166,7 +166,7 @@ int r_strcmp0(const char *s1, const char *s2 )
  *
  * We need the MAXLEN line constant!
  */
-int cmpfold0( const char *s1, const char *s2 )
+int cmpfold( const char *s1, const char *s2 )
 {
     extern char t1[MAXLEN], t2[MAXLEN] ;
     char *u1, *u2;
@@ -183,7 +183,7 @@ int cmpfold0( const char *s1, const char *s2 )
     return(strcmp(u1,u2));
 }
 
-int r_cmpfold0( const char *s1, const char *s2 )
+int r_cmpfold( const char *s1, const char *s2 )
 {
     extern  char t1[MAXLEN], t2[MAXLEN] ;
     char *u1, *u2;
@@ -200,8 +200,8 @@ int r_cmpfold0( const char *s1, const char *s2 )
     return((strcmp(u1,u2) * -1));
 }
 
-/* cmpdir0: ONLY compares alnum and blanks in the strings */
-int cmpdir0(const char *s1, const char *s2)
+/* cmpdir: ONLY compares alnum and blanks in the strings */
+int cmpdir(const char *s1, const char *s2)
 {
     extern  char t1[MAXLEN], t2[MAXLEN] ;
     char *u1, *u2;
@@ -223,8 +223,8 @@ int cmpdir0(const char *s1, const char *s2)
 
     return (strcmp(u1,u2));
 }
-/* r_cmpdir0: ONLY compares alnum and blanks, reverse order */
-int r_cmpdir0(const char *s1, const char *s2)
+/* r_cmpdir: ONLY compares alnum and blanks, reverse order */
+int r_cmpdir(const char *s1, const char *s2)
 {
     extern  char t1[MAXLEN], t2[MAXLEN] ;
     char *u1, *u2;
@@ -248,7 +248,7 @@ int r_cmpdir0(const char *s1, const char *s2)
 }
 
 
-int cmpdir_fold0(const char *s1, const char *s2)
+int cmpdir_fold(const char *s1, const char *s2)
 {
     extern  char t1[MAXLEN], t2[MAXLEN] ;
     char *u1, *u2;
@@ -272,7 +272,7 @@ int cmpdir_fold0(const char *s1, const char *s2)
 
 }
 
-int r_cmpdir_fold0(const char *s1, const char *s2)
+int r_cmpdir_fold(const char *s1, const char *s2)
 {
     extern  char t1[MAXLEN], t2[MAXLEN] ;
     char *u1, *u2;
@@ -300,7 +300,7 @@ int r_cmpdir_fold0(const char *s1, const char *s2)
 
 /* K&R p. 101-102 */
 /* pointer arithmetic demo */
-#define ALLOCSIZE 100000 /* size of available space */
+#define ALLOCSIZE 65536 /* size of available space */
 
 static char allocbuf[ALLOCSIZE] ; /* Storage for alloc */
 static char *allocp = allocbuf ;

@@ -1,8 +1,5 @@
 /* io.h io for full lines */
 
-#define MAXLEN 4096
-#define IFS '\t'
-#define OFS '\t'
 
 int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield) ;
 void writelinesN(char *lineptr[], char * *fparr[], int nlines, int lastfield ) ;

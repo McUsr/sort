@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "options.h"
+#include "io0.h"
 #include "ioN.h"
 /*
  * STRATEGIES:
@@ -76,6 +77,7 @@ int main(int argc, char **argv)
 
     return 0 ;
 #endif
+    /* observe: fieldnr decremented up front. */
     qsortN2((void **) lineptr, fp , 0, nlines-1,
 			4, (int (*)(void *, void *))strcmp);
         writelinesN(lineptr,fp, nlines,5);
@@ -102,7 +104,7 @@ void creat_fparr(char * *fparr[], int rows, int lastfield)
     }
 }
 
-/* ref: returns a field, from a line
+/* retf: returns a field, from a line
  * It is more of a proof of concept, than anything else, as I think we-re going 
  * to do it directly in the comparisionn functions, maybe by an array for further
  * indirection.
@@ -123,17 +125,6 @@ char * retf(  int fieldno, int lastfield, char* *fparr[], int row, int maxline )
     }
 }
 
-
-#if 1 == 0
-/* output field n from the current line */
-void putf( int n, int lastfield) 
-{
-    register char *cp = fp[n] ;             /* we get a pointer into the field pointer array for this field. */
-    register char c;                        /* the pointer returned points into the line buf. */
-    if(n<0 || n >=lastfield) return ;
-    while(c = *cp++) putchar(c) ;
-} 
-#endif
 
 int readlinesN(char *lineptr[], char * *fparr[], int maxlines, int lastfield)
 {
@@ -241,63 +232,6 @@ static int mygetline(char *s, int lim)
 	return t - s;
 }
 
-int (*get_cmpN(OptionsPtr global_opts))(void*, void*) {
-
-    int (*cmpfuncN)(void*, void*) = NULL ;
-                
-    switch (global_opts->method ) {
-        case LEX_METH: 
-            if( global_opts->reverse && global_opts->folding )
-                cmpfuncN =  (int (*)(void*, void*))r_cmpfoldN ;
-            else if (global_opts->reverse )
-                cmpfuncN =  (int (*)(void*, void*))r_strcmpN; 
-            else if (global_opts->folding )
-                cmpfuncN =  (int (*)(void*, void*)) cmpfoldN;
-            else
-                cmpfuncN = (int (*)(void*, void*))strcmp ;
-            break;
-        case NUM_METH:
-            if( global_opts->reverse )
-                cmpfuncN = (int (*)(void*, void*))r_numcmpN ;
-            else
-                cmpfuncN = (int (*)(void*, void*))numcmpN; 
-            break;
-        case DICT_METH:
-            if( global_opts->reverse && global_opts->folding )
-                cmpfuncN = (int (*)(void*, void*)) r_cmpdir_foldN;
-            else if (global_opts->reverse )
-                cmpfuncN = (int (*)(void*, void*))r_cmpdirN; 
-            else if (global_opts->folding )
-                cmpfuncN = (int (*)(void*, void*)) cmpdir_foldN ;
-            else 
-                cmpfuncN = (int (*)(void*, void*))cmpdirN; 
-            break;
-        default:
-            error("Bad constant for sort method!");
-    }
-
-    return cmpfuncN ;
-}
-
-void qsortN(void *v[], int left, int right,
-			int (*comp)(void *, void *))
-{
-	int i, last;
-	/* void swap(void *v[], int, int); */
-    void swapN(void *v[], int i, int j) ;
-
-	if (left >= right)
-		return;
-	swapN(v, left, (left + right)/2);
-	last = left;
-	for (i = left+1; i <= right; i++)
-		if ((*comp)(v[i], v[left]) < 0)
-			swapN(v, ++last, i);
-	swapN(v, left, last);
-	qsortN(v, left, last-1, comp);
-	qsortN(v, last+1, right, comp);
-}
-
 void qsortN2(void *v[], char* *fp[], int left, int right,
 			int fn, int (*comp)(void *, void *))
 {
@@ -315,24 +249,6 @@ void qsortN2(void *v[], char* *fp[], int left, int right,
 	qsortN2(v,fp, last+1, right,fn, comp);
 }
 
-#if 0 == 1
-/* f: returns a field within qsortN
- * the fieldnumber are vetted and decremented up front
- * the linenumber adjusted by the initial call to qsortN
- */
-char *f(fieldno,row) {
-    ;
-}
-#endif
-
-void swapN(void *v[], int i, int j)
-{
-	void *temp;
-	temp  = v[i];
-	v[i]  = v[j];
-	v[j]  = temp;
-}
-
 void swapN2(void *v[], char* *fp[], int i, int j)
 {
 	void *temp;
@@ -343,195 +259,3 @@ void swapN2(void *v[], char* *fp[], int i, int j)
     fp[i] = fp[j];
     fp[j] = temp ;
 }
-
-int numcmpN(const char *s1, const char *s2)
-{
-	double v1, v2;
-
-	v1 = atof(s1);
-	v2 = atof(s2);
-	if (v1 < v2)
-		return -1;
-	else if (v1 > v2)
-		return 1;
-	else
-		return 0;
-}
-
-int r_numcmpN(const char *s1, const char *s2)
-{
-	double v1, v2;
-
-	v1 = atof(s1);
-	v2 = atof(s2);
-	if (v1 < v2)
-		return 1;
-	else if (v1 > v2)
-		return -1;
-	else
-		return 0;
-}
-
-int r_strcmpN(const char *s1, const char *s2 )
-{
-    return (strcmp(s1,s2) * -1 ) ;
-}
-
-/* this function is made, so that 
- * the input is just sorted in a folded
- * fashion, but otherwise displayed as normal
- *
- * We need the MAXLEN line constant!
- */
-int cmpfoldN( const char *s1, const char *s2 )
-{
-    extern char t1[MAXLEN], t2[MAXLEN] ;
-    char *u1, *u2;
-    u1=t1;
-    u2=t2;
-
-    while ((*u1++ = toupper(*s1++)))
-        ;
-
-    while ((*u2++ = toupper(*s2++)))
-        ;
-    u1=t1;
-    u2=t2;
-    return(strcmp(u1,u2));
-}
-
-int r_cmpfoldN( const char *s1, const char *s2 )
-{
-    extern  char t1[MAXLEN], t2[MAXLEN] ;
-    char *u1, *u2;
-    u1=t1;
-    u2=t2;
-
-    while ((*u1++ = toupper(*s1++)))
-        ;
-
-    while ((*u2++ = toupper(*s2++)))
-        ;
-    u1=t1;
-    u2=t2;
-    return((strcmp(u1,u2) * -1));
-}
-
-/* cmpdirN: ONLY compares alnum and blanks in the strings */
-int cmpdirN(const char *s1, const char *s2)
-{
-    extern  char t1[MAXLEN], t2[MAXLEN] ;
-    char *u1, *u2;
-    u1=t1;
-    u2=t2;
-
-    for (;*s1;s1++) 
-        if( isalnum(*s1) || isblank(*s1) )
-            *u1++ = *s1;
-    *u1=*s1;
-
-    for (;*s2;s2++) 
-        if( isalnum(*s2) || isblank(*s2) )
-            *u2++ = *s2;
-    *u2=*s2;
-   
-    u1=t1;
-    u2=t2;
-
-    return (strcmp(u1,u2));
-}
-/* r_cmpdirN: ONLY compares alnum and blanks, reverse order */
-int r_cmpdirN(const char *s1, const char *s2)
-{
-    extern  char t1[MAXLEN], t2[MAXLEN] ;
-    char *u1, *u2;
-    u1=t1;
-    u2=t2;
-
-    for (;*s1;s1++) 
-        if( isalnum(*s1) || isblank(*s1) )
-            *u1++ = *s1;
-    *u1=*s1;
-
-    for (;*s2;s2++) 
-        if( isalnum(*s2) || isblank(*s2) )
-            *u2++ = *s2;
-    *u2=*s2;
-   
-    u1=t1;
-    u2=t2;
-
-    return (strcmp(u1,u2)*-1);
-}
-
-
-int cmpdir_foldN(const char *s1, const char *s2)
-{
-    extern  char t1[MAXLEN], t2[MAXLEN] ;
-    char *u1, *u2;
-    u1=t1;
-    u2=t2;
-
-    for (;*s1;s1++) 
-        if( isalnum(*s1) || isblank(*s1) )
-            *u1++ = toupper(*s1);
-    *u1=*s1;
-
-    for (;*s2;s2++) 
-        if( isalnum(*s2) || isblank(*s2) )
-            *u2++ = toupper(*s2);
-    *u2=*s2;
-   
-    u1=t1;
-    u2=t2;
-
-    return (strcmp(u1,u2));
-
-}
-
-int r_cmpdir_foldN(const char *s1, const char *s2)
-{
-    extern  char t1[MAXLEN], t2[MAXLEN] ;
-    char *u1, *u2;
-    u1=t1;
-    u2=t2;
-
-    for (;*s1;s1++) 
-        if( isalnum(*s1) || isblank(*s1) )
-            *u1++ = toupper(*s1);
-    *u1=*s1;
-
-    for (;*s2;s2++) 
-        if( isalnum(*s2) || isblank(*s2) )
-            *u2++ = toupper(*s2);
-    *u2=*s2;
-   
-    u1=t1;
-    u2=t2;
-
-    return (strcmp(u1,u2)*-1);
-}
-
-/* K&R p. 101-102 */
-/* pointer arithmetic demo */
-#define ALLOCSIZE 100000 /* size of available space */
-
-static char allocbuf[ALLOCSIZE] ; /* Storage for alloc */
-static char *allocp = allocbuf ;
-
-char *alloc(int n) /* return pointer to n characters */
-{
-    if (allocbuf + ALLOCSIZE - allocp >= n ) { /* it fits */
-        allocp +=n ;
-        return allocp -n ; /* old p */
-    } else /* not enough room */
-        return 0;
-}
-
-void afree( char *p ) /* free storage pointed to by p */
-{
-    if (p >= allocbuf && p < allocbuf + ALLOCSIZE)
-       allocp = p ;
-} 
-
-            

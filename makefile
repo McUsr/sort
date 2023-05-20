@@ -5,14 +5,14 @@
 DEPENDENCIES = dequeue.o options.o io0.o sort.o
 
 ioN.o: ioN.h ioN.c
-	cc -o ioN ioN.c options.o dequeue.o
+	cc -o ioN ioN.c io0.o options.o dequeue.o
 
 all: sort
 
 sort: $(DEPENDENCIES) 
-	cc -o sort sort.o options.o dequeue.o io0.o 
+	cc -o sort sort.o options.o dequeue.o ioN.o io0.o 
 
-sort.o: sort.h io0.h options.h dequeue.h
+sort.o: sort.h ioN.h io0.h options.h dequeue.h
 
 options.o: sort.h options.h dequeue.o dequeue.h
 

@@ -20,51 +20,7 @@
 #include "dequeue.h"
 #include "options.h"
 
-#ifdef CAMBODIA
-int fv[MAXF]={0} ;      /*  The fields we will sort the input on
-                            It is mostly for communicating to readline
-                            Maybe a need to parse input into fields would be
-                            a better option.
-                            
-                        */
-
-int parse_fields=0;
-#endif
-
-#define HANOI
-#undef HANOI
-#ifdef HANOI
-
-
-
-int main(int argc, char **argv)
-{
-    int max_field=0;
-    OptionsPtr global_opts=initFieldRec();
-
-    char **ap = parse_opts(&argc, argv,&max_field, global_opts) ;
-    printf("Max fields set: %d\n",max_field );
-    printf("Global options set!");
-    printOptions( global_opts) ;
-
-    if (max_field > 0 ) {
-        while (!isEmpty(*headPtr)) {
-            printf("\nthe queue isn't empty!\n");
-            QueueNodePtr nextNode = dequeue(headPtr) ;
-            OptionsPtr  nextField = (OptionsPtr) nextNode->data ;
-            int curfno = nextField->fieldno ;
-            printf(" options for field nr %d\n",curfno) ;
-            printOptions(nextField) ;
-            free(nextNode) ;
-        }
-        printf("the queue is empty!\n");
-    }
-
-	return 0;
-}
-#endif
-
-void show_help();
+static void show_help();
 void set_opts( char *optstr, OptionsPtr opt_rec );
 
 
@@ -100,9 +56,6 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
        while (--*argc > 0 ) {
             ++argv;
            if (strcmp(*argv,"--")== 0 ) {
-#ifdef BERLIN
-               printf("end of options!\n");
-#endif
                --*argc;
                argv++;
                break ;
@@ -125,21 +78,12 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
                        cur_fld_opts = initFieldRec(); /* die if it doesn't work out. */
                        cur_fld_opts->fieldno = fieldnr; 
                        *max_field = max(*max_field,fieldnr);
-#ifdef BERLIN
-                       printf("We got a field value: %d\n",fieldnr );
-#endif
                        /* we need to specify max field val */
                        if(spec_fields == FALSE )
                            spec_fields = TRUE ;
-#ifdef BERLIN
-                        printf("found a possibly valid fieldnr, value == %d\n",fieldnr) ;
-#endif
 
                     }
                     if (strlen(optstr) > 0 ) {
-#ifdef BERLIN
-                       printf("options FOR A FIELD! == %s\n", optstr) ;
-#endif
                        /* needs to check if there are any other stuff left */
                        set_opts( optstr, cur_fld_opts );
                     } else {
@@ -156,7 +100,6 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
                     if ( spec_fields == TRUE )
                             error("once a field is specified subsequent arguments needs a specified field too.");
                     else {
-                        /* printf("we'll add to the global record optstr == %s\n",optstr); */
                         spec_global = TRUE ;
                         set_opts( optstr, global_opts );
                     }
@@ -164,9 +107,6 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
                } else {
                    error2(" Invalid options: didn't contain a valid argument optsr = %s\n",*argv);
                }
-#ifdef BERLIN
-                printf("End condition: argc == %d, argv = %s\n",*argc,*argv);
-#endif
                /* end condition */
                 if (*argc==1 )
                     argv++;
@@ -183,13 +123,7 @@ char **parse_opts(int *argc,char **argv, int* max_field, OptionsPtr global_opts 
    } else {
        --*argc;
        argv++ ;
-#ifdef BERLIN
-       printf("here...argc == 1 \n"); 
-#endif
    }
-#ifdef BERLIN
-   printf("argc == %d\n",*argc );
-#endif
 
     return argv;
 }
@@ -240,54 +174,6 @@ void set_opts( char *optstr, OptionsPtr opt_rec )
     }
 }
 
-#ifdef LAOS
-
-/*
- * We only enqueue a record when:
- *
- *   - we have processed field,
- *   - we are out of options
- *   - we are out of arguments.
- *
- */
-char **parse_opts(int *argc,char **argv, int* max_field )
-{
-    /* when are we done processing a field?
-     * when a new field turns up to be processed
-     * we know its a new field, because it starts with a number
-     * after the hyphen, or just a a number starting with a hyphen is best.
-     * every option needs to be in the group of the field?
-     * all the parts for a  field is there.
-     *
-     * no number yet, 
-     */
-
-    OptionsPtr cur_fld_opts = initFieldRec();
-
-    int proc_opts = FALSE;
-    int in_proc   = FALSE ;
-
-	while ( *argc > 0  ) {
-        if ((*argv)[0] == '-' ) {
-            in_proc = TRUE ;
-
-            printf("valid argument\n");
-            /* break; */
-        }
-        else 
-            printf("--> %c\n",(*argv)[0]);
-
-		printf("!! argc == %d argv= %s\n",(*argc)--,*(argv++));
-		/* printf("argc == %ds\n",(*argc)--); */
-	}
-
-    if (!proc_opts)
-        enqueue(&tailPtr,(void *)cur_fld_opts) ;
-
-
-    return argv;
-}
-#endif
 
 OptionsPtr initFieldRec(void)
 {
@@ -355,7 +241,7 @@ void error2( const char *s, char *t )
 }
 
 /* show_help: print help and die */
-void show_help()
+static void show_help()
 {
     printf("\n\033[1msort\033[0m: sort standard input or individual files to stdout\n"
             "\nSyntax\n"
